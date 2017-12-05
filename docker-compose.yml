@@ -1,0 +1,60 @@
+version: '3.2'
+services:
+    mysql:
+      build: 
+        context: .
+        dockerfile: Dockerfile-mysql
+      environment:
+        - MYSQL_ROOT_PASSWORD=123456
+        - MYSQL_PASSWORD=123456
+        - MYSQL_DATABASE=database01
+        - MYSQL_USER=db_user
+      ports:
+        - "3306:3306"
+      volumes:
+        - type: volume
+          source: ./db
+          target: /var/lib/mysql:rw
+    memcache:
+      build: 
+        context: .
+        dockerfile: Dockerfile-memcache
+      ports:
+        - "11211:11211"
+    phpmyadmin:
+      container_name: phpmyadmin
+      image: phpmyadmin/phpmyadmin
+      links:
+         - mysql:mysql
+      environment:
+        - PMA_ARBITRARY=1
+      restart: always
+      ports:
+       - "8080:80"
+    redis:
+      container_name: redis
+      image: redis:alpine
+      restart: always
+      ports:
+       - "6379:6379"   
+    php:
+      build: 
+        context: .
+        dockerfile: Dockerfile-php
+      container_name: web
+      links:
+        - mysql:mysql
+        - redis:redis
+        - memcache:memcache
+      environment:
+        XDEBUG_CONFIG: "remote_host=192.168.99.100"
+        PHP_IDE_CONFIG: "serverName=web"
+      ports:
+       - "80:80"
+       - "9000:9000"
+      restart: always
+      volumes:
+        - "./dev:/var/www/html"
+        - "./infra/php/php.ini:/etc/php5/apache2/php.ini"
+        - "./infra/apache/sites-available:/etc/apache2/sites-available/"
+        - "./infra/apache/logs:/var/log/apache2/"
