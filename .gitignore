@@ -1,4 +1,0 @@
-/db/*
-/dev/*
-/infra/apache/logs/access.log
-/infra/apache/logs/error.log
